@@ -1,29 +1,26 @@
 #include <windows.h>
-#include <stdint.h>
-
-typedef uint8_t ui8;
 
 #define internal static
 #define global_variable static
 
-global_variable BITMAPINFO BitmapInfo;
-global_variable void* BitmapMemory;
+global_variable int BitmapWidth = 256;
+global_variable int BitmapHeight = 128;
+global_variable int Scale = 3;
 
-global_variable int BitmapWidth;
-global_variable int BitmapHeight;
 global_variable int WindowWidth;
 global_variable int WindowHeight;
 
+global_variable BITMAPINFO BitmapInfo;
+global_variable void* BitmapMemory;
+
 internal void
-Win32ResizeDIBSection(int Width, int Height)
+Win32ResizeDIBSection()
 {
 	if (BitmapMemory)
 	{
 		VirtualFree(BitmapMemory, 0, MEM_RELEASE);
 	}
 
-	BitmapWidth = Width;
-	BitmapHeight = Height;
 
 	BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
 	BitmapInfo.bmiHeader.biWidth = BitmapWidth;
@@ -33,14 +30,14 @@ Win32ResizeDIBSection(int Width, int Height)
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
 	
 	int BytesPerPixel = 4;	
-	int BitmapMemorySize = Width * Height * BytesPerPixel;
-	int Pitch = Width * BytesPerPixel;
+	int BitmapMemorySize = BitmapWidth * BitmapHeight * BytesPerPixel;
+	int Pitch = BitmapWidth * BytesPerPixel;
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
 
-	ui8 *Row = (ui8 *)BitmapMemory;
+	unsigned char *Row = (unsigned char *)BitmapMemory;
 	for (int Y = 0; Y < BitmapHeight; Y++)
 	{
-		ui8 *Pixel = (ui8 *)Row;
+		unsigned char *Pixel = (unsigned char *)Row;
 		for (int X = 0; X < BitmapWidth; X++)
 		{
 			*Pixel = 0;		// B
@@ -49,7 +46,7 @@ Win32ResizeDIBSection(int Width, int Height)
 			*Pixel = 0;	// G
 			++Pixel;
 
-			*Pixel = 255;		// R
+			*Pixel = (255-X)%255;		// R
 			++Pixel;
 
 			*Pixel = 0;
@@ -68,8 +65,8 @@ Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, 
 
 	StretchDIBits(
 		DeviceContext,
-		0, 0, BitmapWidth, BitmapHeight, 
-		0, 0, WindowWidth, WindowHeight, 
+		0, 0, WindowWidth, WindowHeight, // Destination
+		0, 0, BitmapWidth, BitmapHeight, // Source
 		BitmapMemory,
 		&BitmapInfo,
 		DIB_RGB_COLORS,
@@ -90,11 +87,7 @@ Win32MainWindowCallback(
 	{
 		case WM_SIZE:
 		{
-			RECT ClientRect;
-			GetClientRect(Window, &ClientRect);
-			int Width = ClientRect.right - ClientRect.left;
-			int Height = ClientRect.bottom - ClientRect.top;
-			Win32ResizeDIBSection(Width, Height);
+			Win32ResizeDIBSection();
 			OutputDebugStringA("WM_SIZE\n");
 		} break;
 
@@ -165,10 +158,10 @@ int WINAPI WinMain(
 			WindowClass.lpszClassName,
 			"Ray Tracing In One Weekend",
 			WS_OVERLAPPEDWINDOW,
-			100,		// X
-			100,		// Y
-			200,	// width
-			100,	// height
+			BitmapWidth,		// X
+			BitmapHeight,		// Y
+			BitmapWidth*Scale,	// width
+			BitmapHeight*Scale,	// height
 			0,
 			0,
 			Instance,
