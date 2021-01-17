@@ -2,6 +2,7 @@
 
 // Ray Tracing In One Weekend Rendering starts at line 45
 #include "vec3.h"
+#include "ray.h"
 
 #define internal static
 #define global_variable static
@@ -38,6 +39,13 @@ Win32ResizeDIBSection()
 	int BitmapMemorySize = BitmapWidth * BitmapHeight * BytesPerPixel;
 	int Pitch = BitmapWidth * BytesPerPixel;
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
+	
+	// Ray Tracing In One Weekend Rendering (setup)
+	vec3 lower_left_corner(-2.0, -1.0, -1.0);
+	vec3 horizontal(4.0, 0.0, 0.0);
+	vec3 vertical(0.0, 2.0, 0.0);
+	vec3 origin(0.0, 0.0, 0.0);
+	// Ray Tracing In One Weekend Rendering (setup END)
 
 	unsigned char *Row = (unsigned char *)BitmapMemory;
 	for (int Y = 0; Y < BitmapHeight; Y++)
@@ -45,16 +53,17 @@ Win32ResizeDIBSection()
 		unsigned char *Pixel = (unsigned char *)Row;
 		for (int X = 0; X < BitmapWidth; X++)
 		{
-			// Ray Tracing In One Weekend Rendering Part
-			vec3 color(
-				float(X) / float(BitmapWidth),	// R
-				float(Y) / float(BitmapHeight),	// G
-				0.2f							// B
-			);
+			// Ray Tracing In One Weekend Rendering (actual rendering)
 
-			int ir = int(255.99 * color[0]);
-			int ig = int(255.99 * color[1]);
-			int ib = int(255.99 * color[2]);
+			float u = float(X) / float(BitmapWidth);
+			float v = float(Y) / float(BitmapHeight);
+
+			ray r(origin, lower_left_corner + u * horizontal + v * vertical);
+			vec3 ColorOutput = color(r);
+
+			int ir = int(255.99 * ColorOutput[0]);
+			int ig = int(255.99 * ColorOutput[1]);
+			int ib = int(255.99 * ColorOutput[2]);
 
 			*Pixel = ib;		// B
 			++Pixel;
@@ -64,6 +73,7 @@ Win32ResizeDIBSection()
 
 			*Pixel = ir;		// R
 			++Pixel;
+			// Ray Tracing In One Weekend Rendering (actual rendering END)
 
 			*Pixel = 0;
 			++Pixel;
