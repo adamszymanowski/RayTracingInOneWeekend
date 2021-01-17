@@ -9,7 +9,8 @@ More info at their [github repo](https://github.com/RayTracing/raytracing.github
 The idea is to do the book, but using Win32 Window as a renderer.
 
 I want to utilize simple win32 code from Handmade Hero.
-- [Handmade Hero Day 002](https://www.youtube.com/watch?v=4ROiWonnWGk&t=5s)
+- [Handmade Hero Day 002](https://www.youtube.com/watch?v=4ROiWonnWGk)
+- [Handmade Hero Day 003 - Allocating a Backbuffer](https://www.youtube.com/watch?v=GAi_nTx1zG8)
 
 But I want to use just Visual Studio in the process.
 
@@ -46,3 +47,6 @@ Use Multi-Byte Character Set
 ### CreateWindow
 [CreateWindowExA function (winuser.h)](https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexa)
 [Window Styles](https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles)
+
+### Top-down rendering
+[BITMAPINFOHEADER structure](https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85))
