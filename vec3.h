@@ -77,8 +77,21 @@ inline vec3 operator/(const vec3& v, float t) {
 	return vec3(v.e[0]/t, v.e[1]/t, v.e[2]/t);
 }
 
+/*
+the bug in dot() was so evil!
+it returned this weird concoction:
+(v1.e[0] * v2.e[0], v1.e[1] * v2.e[1], v1.e[2] * v2.e[2]);
+
+that doesn't make any sense on a return type float.
+This should be a compilation error in the first palce, when I wrote this code first time.
+
+EVIL!
+*/
+
 inline float dot(const vec3& v1, const vec3& v2) {
-	return (v1.e[0] * v2.e[0], v1.e[1] * v2.e[1], v1.e[2] * v2.e[2]);
+	return  v1.e[0] * v2.e[0] + 
+			v1.e[1] * v2.e[1] + 
+			v1.e[2] * v2.e[2];
 }
 
 inline vec3 cross(const vec3& v1, const vec3& v2) {
