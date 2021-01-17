@@ -50,3 +50,10 @@ Use Multi-Byte Character Set
 
 ### Top-down rendering
 [BITMAPINFOHEADER structure](https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85))
+
+### Ampersand operator
+[how does the ampersand(&) sign work in c++? [duplicate]](https://stackoverflow.com/questions/8857857/how-does-the-ampersand-sign-work-in-c)
+1. take the address of a variable
+2. pass an argument by reference to a function
+3. declare a reference variable
+4. bitwise and operator

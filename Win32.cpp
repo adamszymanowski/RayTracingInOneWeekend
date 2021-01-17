@@ -1,6 +1,7 @@
 #include <windows.h>
 
 // Ray Tracing In One Weekend Rendering starts at line 45
+#include "vec3.h"
 
 #define internal static
 #define global_variable static
@@ -45,13 +46,15 @@ Win32ResizeDIBSection()
 		for (int X = 0; X < BitmapWidth; X++)
 		{
 			// Ray Tracing In One Weekend Rendering Part
-			float r = float(X) / float(BitmapWidth);
-			float g = float(Y) / float(BitmapHeight);
-			float b = 0.2f;
+			vec3 color(
+				float(X) / float(BitmapWidth),	// R
+				float(Y) / float(BitmapHeight),	// G
+				0.2f							// B
+			);
 
-			int ir = int(255.99 * r);
-			int ig = int(255.99 * g);
-			int ib = int(255.99 * b);
+			int ir = int(255.99 * color[0]);
+			int ig = int(255.99 * color[1]);
+			int ib = int(255.99 * color[2]);
 
 			*Pixel = ib;		// B
 			++Pixel;
