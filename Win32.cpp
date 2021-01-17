@@ -1,11 +1,13 @@
 #include <windows.h>
 
+// Ray Tracing In One Weekend Rendering starts at line 45
+
 #define internal static
 #define global_variable static
 
 global_variable int BitmapWidth = 256;
 global_variable int BitmapHeight = 128;
-global_variable int Scale = 3;
+global_variable int Scale = 4;
 
 global_variable int WindowWidth;
 global_variable int WindowHeight;
@@ -24,7 +26,9 @@ Win32ResizeDIBSection()
 
 	BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
 	BitmapInfo.bmiHeader.biWidth = BitmapWidth;
-	BitmapInfo.bmiHeader.biHeight = -BitmapHeight; // why negative height (https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85))
+	// this should be negative height https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85) to make
+	// "The rows are written out from top to bottom" true, but whatever!
+	BitmapInfo.bmiHeader.biHeight = BitmapHeight; 
 	BitmapInfo.bmiHeader.biPlanes = 1;
 	BitmapInfo.bmiHeader.biBitCount = 32;
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
@@ -40,13 +44,22 @@ Win32ResizeDIBSection()
 		unsigned char *Pixel = (unsigned char *)Row;
 		for (int X = 0; X < BitmapWidth; X++)
 		{
-			*Pixel = 0;		// B
+			// Ray Tracing In One Weekend Rendering Part
+			float r = float(X) / float(BitmapWidth);
+			float g = float(Y) / float(BitmapHeight);
+			float b = 0.2f;
+
+			int ir = int(255.99 * r);
+			int ig = int(255.99 * g);
+			int ib = int(255.99 * b);
+
+			*Pixel = ib;		// B
 			++Pixel;
 
-			*Pixel = 0;	// G
+			*Pixel = ig;		// G
 			++Pixel;
 
-			*Pixel = (255-X)%255;		// R
+			*Pixel = ir;		// R
 			++Pixel;
 
 			*Pixel = 0;
