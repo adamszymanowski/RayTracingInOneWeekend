@@ -15,28 +15,27 @@ I want to utilize simple win32 code from Handmade Hero.
 But I want to use just Visual Studio in the process.
 
 NOTE: There, were problems... solutions below!
-# Documentation
 
-## Entry point errors
-Avoiding dumb
-- C28251
-- LNK2019
-- LNK1120
-errors
+# How to compile inside Visual Studio
+You need to adjust 2 settings in Solution Explorer:
 
 Solution Explorer:
 RayTracingInOneWeekend -> Properties -> (look for options and switches): Entry -> Entry Point -> (enter value):
 WinMainCRTStartup
 
-[/ENTRY (Entry-Point Symbol)](https://docs.microsoft.com/en-us/cpp/build/reference/entry-entry-point-symbol?redirectedfrom=MSDN&view=msvc-160)
-
-## error C2440
-cannot convert from 'const char [12]' to 'LPCWSTR'
-
+Solution Explorer:
 RayTracingInOneWeekend -> Properties ->General -> Character Set -> (choose value):
 Use Multi-Byte Character Set
 
-## Other
+
+First avoids dumb *C28251*, *LNK2019*, *LNK1120* errors
+
+[/ENTRY (Entry-Point Symbol)](https://docs.microsoft.com/en-us/cpp/build/reference/entry-entry-point-symbol?redirectedfrom=MSDN&view=msvc-160)
+
+Second avoids *error *C2440* cannot convert from 'const char [12]' to 'LPCWSTR'
+
+
+# Documentation
 [Window Class Styles](https://docs.microsoft.com/en-us/windows/win32/winmsg/window-class-styles)
 
 ### System defined messages (in WindowProc)
