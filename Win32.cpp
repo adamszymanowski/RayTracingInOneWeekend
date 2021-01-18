@@ -1,15 +1,12 @@
 #include <windows.h>
 
-// Ray Tracing In One Weekend Rendering starts at line 45
-#include "vec3.h"
-#include "ray.h"
 
-#define internal static
 #define global_variable static
+#define internal_function static
 
-global_variable int BitmapWidth = 256;
-global_variable int BitmapHeight = 128;
-global_variable int Scale = 4;
+global_variable int BitmapWidth = 512;
+global_variable int BitmapHeight = 256;
+global_variable int Scale = 2; // not used for now, maybe I'll figure out this later
 
 global_variable int WindowWidth;
 global_variable int WindowHeight;
@@ -17,7 +14,34 @@ global_variable int WindowHeight;
 global_variable BITMAPINFO BitmapInfo;
 global_variable void* BitmapMemory;
 
-internal void
+// Ray Tracing In One Weekend (setup)
+#include "float.h"
+#include "vec3.h"
+#include "ray.h"
+#include "sphere.h"
+#include "hitable_list.h"
+
+internal_function vec3
+color(const ray& r, hitable *world)
+{
+	hit_record rec;
+	if (world->hit(r, 0.0, FLT_MAX, rec))
+	{
+		return 0.5 * vec3(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
+	}
+	else
+	{
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5 * (unit_direction.y() + 1.0);
+		return (1.0 - t) * vec3(1.0, 1.0, 1.0) + vec3(0.5, 0.7, 1.0);
+	}
+}
+
+// Ray Tracing In One Weekend (setup END)
+
+
+
+internal_function void
 Win32ResizeDIBSection()
 {
 	if (BitmapMemory)
@@ -45,6 +69,10 @@ Win32ResizeDIBSection()
 	vec3 horizontal(4.0, 0.0, 0.0);
 	vec3 vertical(0.0, 2.0, 0.0);
 	vec3 origin(0.0, 0.0, 0.0);
+	hitable* list[2];
+	list[0] = new sphere(vec3(0,0,-1), 0.5);
+	list[1] = new sphere(vec3(0, -100.5, -1), 100);
+	hitable* world = new hitable_list(list, 2);
 	// Ray Tracing In One Weekend Rendering (setup END)
 
 	unsigned char *Row = (unsigned char *)BitmapMemory;
@@ -83,7 +111,7 @@ Win32ResizeDIBSection()
 	}
 }
 
-internal void
+internal_function void
 Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, int Height)
 {
 	int WindowWidth = WindowRect->right - WindowRect->left;
@@ -161,7 +189,8 @@ Win32MainWindowCallback(
 	return Result;
 }
 
-int WINAPI WinMain(
+int WINAPI 
+WinMain(
 	HINSTANCE Instance,
 	HINSTANCE PrevInstance,
 	LPSTR     CommandLine,
@@ -184,10 +213,10 @@ int WINAPI WinMain(
 			WindowClass.lpszClassName,
 			"Ray Tracing In One Weekend",
 			WS_OVERLAPPEDWINDOW,
-			BitmapWidth,		// X
-			BitmapHeight,		// Y
-			BitmapWidth*Scale,	// width
-			BitmapHeight*Scale,	// height
+			CW_USEDEFAULT,		// X
+			CW_USEDEFAULT,		// Y
+			CW_USEDEFAULT,	// width
+			CW_USEDEFAULT,	// height
 			0,
 			0,
 			Instance,
