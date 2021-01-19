@@ -4,7 +4,7 @@
 #define global_variable static
 #define internal_function static
 
-global_variable int Scale = 1;
+global_variable int Scale = 2;
 global_variable int BitmapWidth = 256*Scale;
 global_variable int BitmapHeight = 128*Scale;
 
@@ -16,7 +16,7 @@ global_variable BITMAPINFO BitmapInfo;
 global_variable void* BitmapMemory;
 
 // Ray Tracing In One Weekend (setup)
-global_variable int NumberOfSamples = 16; // for live rendering this has to be a low value, othewise it's super slow...
+global_variable int NumberOfSamples = 8; // for live rendering this has to be a low value, otherwise it's super slow...
 
 #include "float.h"
 #include "vec3.h"
@@ -36,12 +36,24 @@ random_float()
 }
 
 internal_function vec3
+random_in_unit_sphere()
+{
+	vec3 p;
+	do
+	{
+		p = 2.0 * vec3(random_float(), random_float(), random_float()) - vec3(1, 1, 1);
+	} while (p.squared_length() >= 1.0);
+	return p;
+}
+
+internal_function vec3
 color(const ray& r, hitable *world)
 {
 	hit_record rec;
 	if (world->hit(r, 0.0, FLT_MAX, rec))
 	{
-		return 0.5 * vec3(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
+		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		return 0.5 * color(ray(rec.p, target-rec.p), world);
 	}
 	else
 	{
@@ -102,6 +114,8 @@ Win32ResizeDIBSection()
 			}
 
 			ColorOutput /= float(NumberOfSamples); // Comment this out for psychodelique fun!
+
+			ColorOutput = vec3(sqrt(ColorOutput[0]), sqrt(ColorOutput[1]), sqrt(ColorOutput[2]));
 
 			int ir = int(255.99 * ColorOutput[0]);
 			int ig = int(255.99 * ColorOutput[1]);
