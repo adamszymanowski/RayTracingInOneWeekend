@@ -4,9 +4,10 @@
 #define global_variable static
 #define internal_function static
 
-global_variable int BitmapWidth = 512;
-global_variable int BitmapHeight = 256;
-global_variable int Scale = 2; // not used for now, maybe I'll figure out this later
+global_variable int Scale = 1;
+global_variable int BitmapWidth = 256*Scale;
+global_variable int BitmapHeight = 128*Scale;
+
 
 global_variable int WindowWidth;
 global_variable int WindowHeight;
@@ -15,11 +16,24 @@ global_variable BITMAPINFO BitmapInfo;
 global_variable void* BitmapMemory;
 
 // Ray Tracing In One Weekend (setup)
+global_variable int NumberOfSamples = 16; // for live rendering this has to be a low value, othewise it's super slow...
+
 #include "float.h"
 #include "vec3.h"
 #include "ray.h"
 #include "sphere.h"
 #include "hitable_list.h"
+#include "camera.h"
+#include <random>
+
+internal_function inline float // taken from the updated version: https://raytracing.github.io/books/RayTracingInOneWeekend.html#surfacenormalsandmultipleobjects
+random_float()
+{
+	static std::uniform_real_distribution<double> distribution(0.0, 1.0);
+	static std::mt19937 generator;
+	float rand = distribution(generator);
+	return rand;
+}
 
 internal_function vec3
 color(const ray& r, hitable *world)
@@ -49,7 +63,6 @@ Win32ResizeDIBSection()
 		VirtualFree(BitmapMemory, 0, MEM_RELEASE);
 	}
 
-
 	BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
 	BitmapInfo.bmiHeader.biWidth = BitmapWidth;
 	// this should be negative height https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85) to make
@@ -65,14 +78,11 @@ Win32ResizeDIBSection()
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
 	
 	// Ray Tracing In One Weekend Rendering (setup)
-	vec3 lower_left_corner(-2.0, -1.0, -1.0);
-	vec3 horizontal(4.0, 0.0, 0.0);
-	vec3 vertical(0.0, 2.0, 0.0);
-	vec3 origin(0.0, 0.0, 0.0);
 	hitable* list[2];
 	list[0] = new sphere(vec3(0, 0, -1), 0.5);
 	list[1] = new sphere(vec3(0, -100.5, -1), 100);
 	hitable* world = new hitable_list(list, 2);
+	camera cam;
 	// Ray Tracing In One Weekend Rendering (setup END)
 
 	unsigned char *Row = (unsigned char *)BitmapMemory;
@@ -82,12 +92,16 @@ Win32ResizeDIBSection()
 		for (int X = 0; X < BitmapWidth; X++)
 		{
 			// Ray Tracing In One Weekend Rendering (actual rendering)
+			vec3 ColorOutput(0, 0, 0);
+			for (int S = 0; S < NumberOfSamples; S++)
+			{
+				float u = float(X + random_float()) / float(BitmapWidth);
+				float v = float(Y + random_float()) / float(BitmapHeight);
+				ray r = cam.get_ray(u, v);
+				ColorOutput += color(r, world);
+			}
 
-			float u = float(X) / float(BitmapWidth);
-			float v = float(Y) / float(BitmapHeight);
-
-			ray r(origin, lower_left_corner + u * horizontal + v * vertical);
-			vec3 ColorOutput = color(r, world);
+			ColorOutput /= float(NumberOfSamples); // Comment this out for psychodelique fun!
 
 			int ir = int(255.99 * ColorOutput[0]);
 			int ig = int(255.99 * ColorOutput[1]);
