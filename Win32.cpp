@@ -26,6 +26,12 @@ global_variable int NumberOfSamples = 8; // for live rendering this has to be a 
 #include "camera.h"
 #include <random>
 
+class material
+{
+public:
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
+};
+
 internal_function inline float // taken from the updated version: https://raytracing.github.io/books/RayTracingInOneWeekend.html#surfacenormalsandmultipleobjects
 random_float()
 {
@@ -47,27 +53,11 @@ random_in_unit_sphere()
 }
 
 internal_function vec3
-color(const ray& r, hitable *world)
+reflect(const vec3& v, const vec3& n)
 {
-	hit_record rec;
-	if (world->hit(r, 0.0, FLT_MAX, rec))
-	{
-		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-		return 0.5 * color(ray(rec.p, target-rec.p), world);
-	}
-	else
-	{
-		vec3 unit_direction = unit_vector(r.direction());
-		float t = 0.5 * (unit_direction.y() + 1.0);
-		return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
-	}
+	return v - 2 * dot(v, n) * n;
 }
 
-class material
-{
-public:
-	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
-};
 
 class lambertian : public material
 {
@@ -76,12 +66,52 @@ public:
 	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
 	{
 		vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+		scattered = ray(rec.p, target - rec.p);
+		attenuation = albedo;
 		return true;
 	}
 
 	vec3 albedo;
 };
 
+class metal : public material
+{
+public:
+	metal(const vec3& a) : albedo(a) {}
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+	{
+		vec3 reflected = reflect(unit_vector(r_in.direction()), rec.normal);
+		scattered = ray(rec.p, reflected);
+		attenuation = albedo;
+		return (dot(scattered.direction(), rec.normal) > 0);
+	}
+	vec3 albedo;
+};
+
+internal_function vec3
+color(const ray& r, hitable *world, int depth)
+{
+	hit_record rec;
+	if (world->hit(r, 0.0, FLT_MAX, rec))
+	{
+		ray scattered;
+		vec3 attenuation;
+		if (depth < 50 && rec.mat_ptr->scatter(r, rec, attenuation, scattered))
+		{
+			return attenuation * color(scattered, world, depth + 1);
+		}
+		else
+		{
+			return vec3(0,0,0);
+		}
+	}
+	else
+	{
+		vec3 unit_direction = unit_vector(r.direction());
+		float t = 0.5 * (unit_direction.y() + 1.0);
+		return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+	}
+}
 // Ray Tracing In One Weekend (setup END)
 
 
@@ -109,10 +139,12 @@ Win32ResizeDIBSection()
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
 	
 	// Ray Tracing In One Weekend Rendering (setup)
-	hitable* list[2];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5);
-	list[1] = new sphere(vec3(0, -100.5, -1), 100);
-	hitable* world = new hitable_list(list, 2);
+	hitable* list[4];
+	list[0] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
+	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
+	list[2] = new sphere(vec3(1, 0, -1), 0.5, new metal(vec3(0.8, 0.6, 0.2)));
+	list[3] = new sphere(vec3(-1, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8)));
+	hitable* world = new hitable_list(list, 4);
 	camera cam;
 	// Ray Tracing In One Weekend Rendering (setup END)
 
@@ -129,7 +161,7 @@ Win32ResizeDIBSection()
 				float u = float(X + random_float()) / float(BitmapWidth);
 				float v = float(Y + random_float()) / float(BitmapHeight);
 				ray r = cam.get_ray(u, v);
-				ColorOutput += color(r, world);
+				ColorOutput += color(r, world, 0);
 			}
 
 			ColorOutput /= float(NumberOfSamples); // Comment this out for psychodelique fun!

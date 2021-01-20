@@ -2,20 +2,23 @@
 
 #include "hitable.h"
 
+class material;
 
 class sphere : public hitable 
 {
 public:
 	sphere() {};
-	sphere(vec3 cen, float r) : center(cen), radius(r) {};
+	sphere(vec3 cen, float r, material* m) : center(cen), radius(r), mat(m) {};
 	virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;
 	
 	vec3 center;
 	float radius;
+	material* mat;
 };
 
 bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
+	rec.mat_ptr = this->mat;
 	vec3 oc = r.origin() - center;
 	float a = dot(r.direction(), r.direction());
 	float b = dot(oc, r.direction());
