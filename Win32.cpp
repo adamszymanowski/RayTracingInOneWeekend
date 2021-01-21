@@ -35,7 +35,7 @@ public:
 internal_function inline float // taken from the updated version: https://raytracing.github.io/books/RayTracingInOneWeekend.html#surfacenormalsandmultipleobjects
 random_float()
 {
-	static std::uniform_real_distribution<double> distribution(0.0, 1.0);
+	static std::uniform_real_distribution<float> distribution(0.0, 1.0);
 	static std::mt19937 generator;
 	float rand = distribution(generator);
 	return rand;
@@ -58,6 +58,61 @@ reflect(const vec3& v, const vec3& n)
 	return v - 2 * dot(v, n) * n;
 }
 
+internal_function bool
+refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted)
+{
+	vec3 uv = unit_vector(v);
+	float dt = dot(uv, n);
+	float discriminant = 1.0f - ni_over_nt*ni_over_nt * (1.0f-dt*dt) ;
+	if (discriminant > 0)
+	{
+		refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+class dielectric : public material
+{
+public:
+	dielectric(float ri) : ref_idx(ri) {}
+	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const
+	{
+		vec3 outward_normal;
+		vec3 reflected = reflect(r_in.direction(), rec.normal);
+		float ni_over_nt;
+		attenuation = vec3(1.0, 1.0, 1.0);
+		vec3 refracted;
+
+		if (dot(r_in.direction(), rec.normal) > 0)
+		{
+			outward_normal = -rec.normal;
+			ni_over_nt = ref_idx;
+		}
+		else
+		{
+			outward_normal = rec.normal;
+			ni_over_nt = 1.0f / ref_idx;
+		}
+
+		if (refract(r_in.direction(), outward_normal, ni_over_nt, refracted))
+		{
+			scattered = ray(rec.p, reflected);
+		}
+		else
+		{
+			scattered = ray(rec.p, reflected);
+			return false;
+		}
+
+		return true;
+	}
+
+	float ref_idx;
+};
 
 class lambertian : public material
 {
@@ -109,8 +164,8 @@ color(const ray& r, hitable *world, int depth)
 	else
 	{
 		vec3 unit_direction = unit_vector(r.direction());
-		float t = 0.5 * (unit_direction.y() + 1.0);
-		return (1.0 - t) * vec3(1.0, 1.0, 1.0) + t * vec3(0.5, 0.7, 1.0);
+		float t = 0.5f * (unit_direction.y() + 1.0f);
+		return (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
 	}
 }
 // Ray Tracing In One Weekend (setup END)
@@ -141,10 +196,10 @@ Win32ResizeDIBSection()
 	
 	// Ray Tracing In One Weekend Rendering (setup)
 	hitable* list[4];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5, new lambertian(vec3(0.8, 0.3, 0.3)));
-	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8, 0.8, 0.0)));
-	list[2] = new sphere(vec3(1, 0, -1), 0.5, new metal(vec3(0.8, 0.6, 0.2), 0.3));
-	list[3] = new sphere(vec3(-1, 0, -1), 0.5, new metal(vec3(0.8, 0.8, 0.8), 1));
+	list[0] = new sphere(vec3(0, 0, -1), 0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
+	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
+	list[2] = new sphere(vec3(1, 0, -1), 0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.3f));
+	list[3] = new sphere(vec3(-1, 0, -1), 0.5f, new dielectric(1.5f));
 	hitable* world = new hitable_list(list, 4);
 	camera cam;
 	// Ray Tracing In One Weekend Rendering (setup END)
