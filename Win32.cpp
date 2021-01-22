@@ -222,7 +222,8 @@ Win32ResizeDIBSection()
 	list[3] = new sphere(vec3(-1, 0, -1), 0.5f, new dielectric(1.5f));
 	list[4] = new sphere(vec3(-1, 0, -1), -0.45f, new dielectric(1.5f));
 	hitable* world = new hitable_list(list, 5);
-	camera cam;
+	
+	camera cam(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight));
 	// Ray Tracing In One Weekend Rendering (setup END)
 
 	unsigned char *Row = (unsigned char *)BitmapMemory;
