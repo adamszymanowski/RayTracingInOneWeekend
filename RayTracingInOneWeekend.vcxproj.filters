@@ -43,7 +43,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Win32.cpp">
+    <ClCompile Include="Win32RTiOW.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
