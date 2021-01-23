@@ -24,22 +24,13 @@ global_variable int NumberOfSamples = 8; // for live rendering this has to be a 
 #include "sphere.h"
 #include "hitable_list.h"
 #include "camera.h"
-#include <random>
+#include "random_float.h"
 
 class material
 {
 public:
 	virtual bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered) const = 0;
 };
-
-internal_function inline float // taken from the updated version: https://raytracing.github.io/books/RayTracingInOneWeekend.html#surfacenormalsandmultipleobjects
-random_float()
-{
-	static std::uniform_real_distribution<float> distribution(0.0, 1.0);
-	static std::mt19937 generator;
-	float rand = distribution(generator);
-	return rand;
-}
 
 internal_function vec3
 random_in_unit_sphere()
@@ -223,7 +214,12 @@ Win32ResizeDIBSection()
 	list[4] = new sphere(vec3(-1, 0, -1), -0.45f, new dielectric(1.5f));
 	hitable* world = new hitable_list(list, 5);
 	
-	camera cam(vec3(-2,2,1), vec3(0,0,-1), vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight));
+
+	vec3 lookfrom(3, 3, 2);
+	vec3 lookat(0, 0, -1);
+	float dist_to_focus = (lookfrom - lookat).length();
+	float aperture = 2.0;
+	camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight), aperture, dist_to_focus);
 	// Ray Tracing In One Weekend Rendering (setup END)
 
 	unsigned char *Row = (unsigned char *)BitmapMemory;
