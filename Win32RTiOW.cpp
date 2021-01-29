@@ -4,6 +4,8 @@
 #define global_variable static
 #define internal_function static
 
+global_variable bool Running;
+
 global_variable int Scale = 2;
 global_variable int BitmapWidth = 256*Scale;
 global_variable int BitmapHeight = 128*Scale;
@@ -218,7 +220,7 @@ Win32ResizeDIBSection()
 	vec3 lookfrom(3, 3, 2);
 	vec3 lookat(0, 0, -1);
 	float dist_to_focus = (lookfrom - lookat).length();
-	float aperture = 2.0;
+	float aperture = 0.1;
 	camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight), aperture, dist_to_focus);
 	// Ray Tracing In One Weekend Rendering (setup END)
 
@@ -381,24 +383,21 @@ WinMain(
 			// This need to be a part of code for some reason
 			ShowWindow(WindowHandle, ShowCode);
 
-			MSG Message;
-			for(;;)
+			Running = true;
+			while (Running)
 			{
-				
-
-				BOOL MessageResult = GetMessage(&Message, 0, 0, 0);
-				if (MessageResult > 0)
+				MSG Message;
+				while (PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
 				{
+					if (Message.message == WM_QUIT)
+					{
+						Running = false;
+					}
+
 					TranslateMessage(&Message);
-					DispatchMessageA(&Message);
+					DispatchMessage(&Message);
 				}
-				else
-				{
-					break;
-				}
-
 			}
-
 		}
 		else
 		{

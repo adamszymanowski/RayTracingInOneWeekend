@@ -6,13 +6,24 @@
 
 vec3 random_unit_in_disk()
 {
+	/*
 	vec3 p;
 	do
 	{
-		p = 2.0f * vec3(random_float(), random_float(), 0);
+		p = 2.0f * (vec3(random_float(), random_float(), 0) - vec3(1,1,0));
 	} while (dot(p, p) >= 1.0f);
 
 	return p;
+	*/
+
+	
+	while (true) 
+	{
+		auto p = vec3(random_float(), random_float(), 0);
+		if (p.squared_length() >= 1) continue;
+		return p;
+	}
+
 }
 
 class camera
@@ -22,7 +33,7 @@ public:
 		vec3 lookfrom, 
 		vec3 lookat, 
 		vec3 vup, 
-		float vfov, // vfov is to to bottom in degrees
+		float vfov, // vfov is top to bottom in degrees
 		float aspect,
 		float aperture,
 		float focus_dist)
