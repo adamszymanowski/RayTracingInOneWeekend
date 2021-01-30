@@ -5,8 +5,9 @@
 #define internal_function static
 
 global_variable bool Running;
+global_variable bool RunOnce = true;
 
-global_variable int Scale = 2;
+global_variable int Scale = 4;
 global_variable int BitmapWidth = 256*Scale;
 global_variable int BitmapHeight = 128*Scale;
 
@@ -73,7 +74,7 @@ schlick(float cosine, float ref_idx)
 {
 	float r0 = (1 - ref_idx) / (1 + ref_idx);
 	r0 = r0 * r0;
-	return r0 + (1 - r0) * pow((1 - cosine), 5);
+	return r0 + (1.0f - (float)r0) * pow((1 - cosine), 5);
 }
 
 class dielectric : public material
@@ -181,9 +182,56 @@ color(const ray& r, hitable *world, int depth)
 		return (1.0f - t) * vec3(1.0f, 1.0f, 1.0f) + t * vec3(0.5f, 0.7f, 1.0f);
 	}
 }
+
+internal_function hitable *
+random_scene()
+{
+	int range = 8;
+	int n = ((range * range)*4 + 4);
+	hitable **list = new hitable*[n];
+	list[0] = new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0.5f, 0.5f, 0.5f)));
+	int i = 1;
+	for (int a = -range; a < range; a++)
+	{
+		for (int b = -range; b < range; b++)
+		{
+			float choose_mat = random_float();
+			vec3 center(a + 0.9 * random_float(), 0.2, b + 0.9 * random_float());
+			if ((center - vec3(4, 0.2f, 0)).length() > 0.9)
+			{
+				if (choose_mat < 0.75)		// diffuse
+				{
+					list[i++] = new sphere(center, 0.2,
+						new lambertian(vec3(random_float() * random_float(),
+							random_float() * random_float(),
+							random_float() * random_float())));
+				}
+				else if (choose_mat < 0.90) // metal
+				{
+
+					list[i++] = new sphere(center, 0.2,
+						new metal(vec3((0.5f * (1 + random_float())),
+							(0.5f * (1 + random_float())),
+							(0.5f * (1 + random_float()))),
+							/* vec3 end*/
+							(0.5f * (1 + random_float()))));
+				}
+				else						// glass
+				{
+					list[i++] = new sphere(center, 0.2,
+						new dielectric(1.5));
+				}
+			}
+		}
+	}
+	list[i++] = new sphere(vec3(0, 1, 0), 1.0f, new dielectric(1.5f));
+	list[i++] = new sphere(vec3(-4, 1, 0), 1.0f, new lambertian(vec3(0.4f, 0.2f, 0.1f)));
+	list[i++] = new sphere(vec3(4, 1, 0), 1.0f, new metal(vec3(0.7f, 0.6f, 0.5f), 0.0f));
+
+	return new hitable_list(list, i);
+}
+
 // Ray Tracing In One Weekend (setup END)
-
-
 
 internal_function void
 Win32ResizeDIBSection()
@@ -202,23 +250,16 @@ Win32ResizeDIBSection()
 	BitmapInfo.bmiHeader.biBitCount = 32;
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
 	
-	int BytesPerPixel = 4;	
+	const int BytesPerPixel = 4;	
 	int BitmapMemorySize = BitmapWidth * BitmapHeight * BytesPerPixel;
 	int Pitch = BitmapWidth * BytesPerPixel;
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
 	
 	// Ray Tracing In One Weekend Rendering (setup)
-	hitable* list[5];
-	list[0] = new sphere(vec3(0, 0, -1), 0.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)));
-	list[1] = new sphere(vec3(0, -100.5, -1), 100, new lambertian(vec3(0.8f, 0.8f, 0.0f)));
-	list[2] = new sphere(vec3(1, 0, -1), 0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.3f));
-	list[3] = new sphere(vec3(-1, 0, -1), 0.5f, new dielectric(1.5f));
-	list[4] = new sphere(vec3(-1, 0, -1), -0.45f, new dielectric(1.5f));
-	hitable* world = new hitable_list(list, 5);
-	
+	hitable* world = random_scene();
 
-	vec3 lookfrom(3, 3, 2);
-	vec3 lookat(0, 0, -1);
+	vec3 lookfrom(13, 2, 3);
+	vec3 lookat(0, 0, 0);
 	float dist_to_focus = (lookfrom - lookat).length();
 	float aperture = 0.1;
 	camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight), aperture, dist_to_focus);
