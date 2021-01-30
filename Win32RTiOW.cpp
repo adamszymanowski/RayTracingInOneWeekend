@@ -268,7 +268,7 @@ Win32ResizeDIBSection()
 	unsigned char *Row = (unsigned char *)BitmapMemory;
 	for (int Y = 0; Y < BitmapHeight; Y++)
 	{
-		unsigned char *Pixel = (unsigned char *)Row;
+		unsigned int *Pixel = (unsigned int *)Row;
 		for (int X = 0; X < BitmapWidth; X++)
 		{
 			// Ray Tracing In One Weekend Rendering (actual rendering)
@@ -285,22 +285,14 @@ Win32ResizeDIBSection()
 
 			ColorOutput = vec3(sqrt(ColorOutput[0]), sqrt(ColorOutput[1]), sqrt(ColorOutput[2]));
 
-			int ir = int(255.99 * ColorOutput[0]);
-			int ig = int(255.99 * ColorOutput[1]);
-			int ib = int(255.99 * ColorOutput[2]);
+			unsigned char ir = unsigned char(255.99 * ColorOutput[0]);
+			unsigned char ig = unsigned char(255.99 * ColorOutput[1]);
+			unsigned char ib = unsigned char(255.99 * ColorOutput[2]);
 
-			*Pixel = ib;		// B
-			++Pixel;
-
-			*Pixel = ig;		// G
-			++Pixel;
-
-			*Pixel = ir;		// R
-			++Pixel;
 			// Ray Tracing In One Weekend Rendering (actual rendering END)
+			// B G R 0, so reversed when bit or-ing: 0 R G B
+			*Pixel++ = (0 << 24) | (ir << 16) | (ig << 8) | ib;
 
-			*Pixel = 0;
-			++Pixel;
 		}
 
 		Row += Pitch;
