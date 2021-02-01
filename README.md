@@ -24,7 +24,7 @@ RayTracingInOneWeekend -> Properties -> (look for options and switches): Entry -
 WinMainCRTStartup
 
 Solution Explorer:
-RayTracingInOneWeekend -> Properties ->General -> Character Set -> (choose value):
+RayTracingInOneWeekend -> Properties -> Advanced -> Character Set -> (choose value):
 Use Multi-Byte Character Set
 
 
