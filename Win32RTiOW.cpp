@@ -7,13 +7,13 @@
 global_variable bool Running;
 global_variable bool RunOnce = true;
 
-global_variable int Scale = 4;
-global_variable int BitmapWidth = 256*Scale;
-global_variable int BitmapHeight = 128*Scale;
+global_variable int BitmapScale = 3;
+global_variable int BitmapWidth = 256 * BitmapScale;
+global_variable int BitmapHeight = 128 * BitmapScale;
 
-
-global_variable int WindowWidth;
-global_variable int WindowHeight;
+global_variable int WindowScale = 1;
+global_variable int WindowWidth = BitmapWidth * WindowScale;
+global_variable int WindowHeight = BitmapHeight * WindowScale;
 
 global_variable BITMAPINFO BitmapInfo;
 global_variable void* BitmapMemory;
@@ -57,7 +57,7 @@ refract(const vec3& v, const vec3& n, float ni_over_nt, vec3& refracted)
 {
 	vec3 uv = unit_vector(v);
 	float dt = dot(uv, n);
-	float discriminant = 1.0f - (ni_over_nt*ni_over_nt * (1.0f-dt*dt)) ;
+	float discriminant = 1.0f - (ni_over_nt * ni_over_nt * (1.0f - dt * dt));
 	if (discriminant > 0)
 	{
 		refracted = (ni_over_nt * (uv - (n * dt))) - n * sqrt(discriminant);
@@ -159,7 +159,7 @@ public:
 };
 
 internal_function vec3
-color(const ray& r, hitable *world, int depth)
+color(const ray& r, hitable* world, int depth)
 {
 	hit_record rec;
 	if (world->hit(r, 0.0, FLT_MAX, rec))
@@ -172,7 +172,7 @@ color(const ray& r, hitable *world, int depth)
 		}
 		else
 		{
-			return vec3(0,0,0);
+			return vec3(0, 0, 0);
 		}
 	}
 	else
@@ -183,12 +183,12 @@ color(const ray& r, hitable *world, int depth)
 	}
 }
 
-internal_function hitable *
+internal_function hitable*
 random_scene()
 {
 	int range = 8;
-	int n = ((range * range)*4 + 4);
-	hitable **list = new hitable*[n];
+	int n = ((range * range) * 4 + 4);
+	hitable** list = new hitable * [n];
 	list[0] = new sphere(vec3(0, -1000, 0), 1000, new lambertian(vec3(0.5f, 0.5f, 0.5f)));
 	int i = 1;
 	for (int a = -range; a < range; a++)
@@ -245,16 +245,16 @@ Win32ResizeDIBSection()
 	BitmapInfo.bmiHeader.biWidth = BitmapWidth;
 	// this should be negative height https://docs.microsoft.com/en-us/previous-versions/dd183376(v=vs.85) to make
 	// "The rows are written out from top to bottom" true, but whatever!
-	BitmapInfo.bmiHeader.biHeight = BitmapHeight; 
+	BitmapInfo.bmiHeader.biHeight = BitmapHeight;
 	BitmapInfo.bmiHeader.biPlanes = 1;
 	BitmapInfo.bmiHeader.biBitCount = 32;
 	BitmapInfo.bmiHeader.biCompression = BI_RGB;
-	
-	const int BytesPerPixel = 4;	
+
+	const int BytesPerPixel = 4;
 	int BitmapMemorySize = BitmapWidth * BitmapHeight * BytesPerPixel;
 	int Pitch = BitmapWidth * BytesPerPixel;
 	BitmapMemory = VirtualAlloc(0, BitmapMemorySize, MEM_COMMIT, PAGE_READWRITE);
-	
+
 	// Ray Tracing In One Weekend Rendering (setup)
 	hitable* world = random_scene();
 
@@ -262,13 +262,13 @@ Win32ResizeDIBSection()
 	vec3 lookat(0, 0, 0);
 	float dist_to_focus = (lookfrom - lookat).length();
 	float aperture = 0.1;
-	camera cam(lookfrom, lookat, vec3(0,1,0), 20, float(BitmapWidth)/ float(BitmapHeight), aperture, dist_to_focus);
+	camera cam(lookfrom, lookat, vec3(0, 1, 0), 20, float(BitmapWidth) / float(BitmapHeight), aperture, dist_to_focus);
 	// Ray Tracing In One Weekend Rendering (setup END)
 
-	unsigned char *Row = (unsigned char *)BitmapMemory;
+	unsigned char* Row = (unsigned char*)BitmapMemory;
 	for (int Y = 0; Y < BitmapHeight; Y++)
 	{
-		unsigned int *Pixel = (unsigned int *)Row;
+		unsigned int* Pixel = (unsigned int*)Row;
 		for (int X = 0; X < BitmapWidth; X++)
 		{
 			// Ray Tracing In One Weekend Rendering (actual rendering)
@@ -300,15 +300,15 @@ Win32ResizeDIBSection()
 }
 
 internal_function void
-Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, int Height)
+Win32UpdateWindow(HDC DeviceContext, RECT* ClientRect)
 {
-	int WindowWidth = WindowRect->right - WindowRect->left;
-	int WindowHeight = WindowRect->bottom - WindowRect->top;
+	int WindowClientWidth = ClientRect->right - ClientRect->left;
+	int WindowClientHeight = ClientRect->bottom - ClientRect->top;
 
 	StretchDIBits(
 		DeviceContext,
-		0, 0, WindowWidth, WindowHeight, // Destination
-		0, 0, BitmapWidth, BitmapHeight, // Source
+		0, 0, WindowClientWidth, WindowClientHeight, // Destination
+		0, 0, BitmapWidth, BitmapHeight,			 // Source
 		BitmapMemory,
 		&BitmapInfo,
 		DIB_RGB_COLORS,
@@ -316,7 +316,7 @@ Win32UpdateWindow(HDC DeviceContext, RECT *WindowRect, int X, int Y, int Width, 
 	);
 }
 
-LRESULT CALLBACK 
+LRESULT CALLBACK
 Win32MainWindowCallback(
 	HWND   Window,
 	UINT   Message,
@@ -327,57 +327,54 @@ Win32MainWindowCallback(
 	LRESULT Result = 0;
 	switch (Message)
 	{
-		case WM_SIZE:
-		{
-			Win32ResizeDIBSection();
-			OutputDebugStringA("WM_SIZE\n");
-		} break;
+	case WM_SIZE:
+	{
+		Win32ResizeDIBSection();
+		OutputDebugStringA("WM_SIZE\n");
+	} break;
 
-		case WM_CLOSE:
-		{
-			OutputDebugStringA("WM_CLOSE\n");
-			DestroyWindow(Window);
-		} break;
+	case WM_CLOSE:
+	{
+		OutputDebugStringA("WM_CLOSE\n");
+		DestroyWindow(Window);
+	} break;
 
-		case WM_DESTROY:
-		{
-			OutputDebugStringA("WM_DESTROY\n");
-			PostQuitMessage(0);
-			Result = 0;
-		} break;
+	case WM_DESTROY:
+	{
+		OutputDebugStringA("WM_DESTROY\n");
+		PostQuitMessage(0);
+		Result = 0;
+	} break;
 
-		case WM_ACTIVATEAPP:
-		{
-			OutputDebugStringA("WM_ACTIVATEAPP\n");
-		} break;
+	case WM_ACTIVATEAPP:
+	{
+		OutputDebugStringA("WM_ACTIVATEAPP\n");
+	} break;
 
-		case WM_PAINT:
-		{
-			PAINTSTRUCT Paint;
-			HDC DeviceContext = BeginPaint(Window, &Paint);
-			int X = Paint.rcPaint.left;
-			int Y = Paint.rcPaint.top;
-			int Width = Paint.rcPaint.right - Paint.rcPaint.left;
-			int Height = Paint.rcPaint.bottom - Paint.rcPaint.top;
+	case WM_PAINT:
+	{
 
-			RECT ClientRect;
-			GetClientRect(Window, &ClientRect);
+		PAINTSTRUCT Paint;
+		HDC DeviceContext = BeginPaint(Window, &Paint);
 
-			Win32UpdateWindow(DeviceContext, &ClientRect, X, Y, Width, Height);
-			EndPaint(Window, &Paint);
-		} break;
+		RECT ClientRect;
+		GetClientRect(Window, &ClientRect);
 
-		default:
-		{
-			OutputDebugStringA("default\n");
-			Result = DefWindowProc(Window, Message, WParam, LParam);
-		}
+		Win32UpdateWindow(DeviceContext, &ClientRect);
+		//EndPaint(Window, &Paint);
+	} break;
+
+	default:
+	{
+		OutputDebugStringA("default\n");
+		Result = DefWindowProc(Window, Message, WParam, LParam);
+	}
 	}
 
 	return Result;
 }
 
-int WINAPI 
+int WINAPI
 WinMain(
 	HINSTANCE Instance,
 	HINSTANCE PrevInstance,
@@ -385,26 +382,36 @@ WinMain(
 	int       ShowCode)
 {
 	WNDCLASS WindowClass = {};
-	
+
 	WindowClass.style = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
 	WindowClass.lpfnWndProc = Win32MainWindowCallback;
 	WindowClass.hInstance = Instance;
 	//WindowClass.hIcon;
 	WindowClass.lpszClassName = "RTIOW_Class";
 
-	
+
 
 	if (RegisterClass(&WindowClass))
 	{
+		RECT WindowRect = { 0, 0, (LONG)WindowWidth, (LONG)WindowHeight };
+
+		if (!AdjustWindowRectEx(&WindowRect, WS_OVERLAPPEDWINDOW | WS_VISIBLE, 0, 0))
+		{
+			OutputDebugStringA("Adjust Window Rect Fail.\n");
+		}
+
+		int WidthToCreateWindow = WindowRect.right - WindowRect.left;
+		int HeightToCreateWindow = WindowRect.bottom - WindowRect.top;
+
 		HWND WindowHandle = CreateWindowExA(
 			0,
 			WindowClass.lpszClassName,
 			"Ray Tracing In One Weekend",
-			WS_OVERLAPPEDWINDOW,
+			WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 			CW_USEDEFAULT,		// X
 			CW_USEDEFAULT,		// Y
-			CW_USEDEFAULT,	// width
-			CW_USEDEFAULT,	// height
+			WidthToCreateWindow,	// width
+			HeightToCreateWindow,	// height
 			0,
 			0,
 			Instance,
@@ -434,11 +441,11 @@ WinMain(
 		}
 		else
 		{
-			// TODO: Logging
+			OutputDebugStringA("WindowHandle Fail.\n");
 		}
 	}
 	else
 	{
-		// TODO: Logging
+		OutputDebugStringA("RegisterClass Fail.\n");
 	}
 }
